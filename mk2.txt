@@ -1,0 +1,235 @@
+EX 2:......................................................................................................................................................
+DevOps Experiment: Java Application using Maven, JUnit and Azure Pipeline
+
+Step 1: Install and verify Java and Maven
+Open the Ubuntu terminal.
+Copy and execute:
+sudo apt update
+sudo apt install openjdk-17-jdk maven git -y
+Check the installations:
+java -version
+mvn -version
+git --version
+Step 2: Create a Maven project
+Execute these commands:
+mkdir StudentResult
+cd StudentResult
+
+mkdir -p src/main/java/com/example
+mkdir -p src/test/java/com/example
+Step 3: Create the Java application
+Open the terminal and execute:
+gedit src/main/java/com/example/StudentResult.java
+Paste this code:
+package com.example;
+
+public class StudentResult {
+
+    public String checkResult(int marks) {
+
+        if (marks >= 50) {
+            return "Pass";
+        } else {
+            return "Fail";
+        }
+    }
+
+    public static void main(String[] args) {
+
+        StudentResult student = new StudentResult();
+
+        int marks = 75;
+
+        System.out.println("Marks: " + marks);
+        System.out.println("Result: " + student.checkResult(marks));
+    }
+}
+Save the file and close the editor.
+Step 4: Create JUnit test cases
+Execute:
+gedit src/test/java/com/example/StudentResultTest.java
+Paste this code:
+package com.example;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class StudentResultTest {
+    StudentResult student = new StudentResult();
+    @Test
+    public void testFail() {
+        assertEquals("Fail", student.checkResult(35));
+    }
+    @Test
+    public void testPass50() {
+        assertEquals("Pass", student.checkResult(50));
+    }
+    @Test
+    public void testPass75() {
+        assertEquals("Pass", student.checkResult(75));
+    }
+    @Test
+    public void testPass100() {
+        assertEquals("Pass", student.checkResult(100));
+    }
+}
+Save and close.
+
+
+Step 5: Create the Maven configuration file
+Execute:
+gedit pom.xml
+Paste the complete code:
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>StudentResult</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.11.4</junit.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+Save and close.
+Step 6: Run the application and regression tests locally
+First, compile and execute the JUnit tests.
+mvn clean test
+Expected output:
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+
+BUILD SUCCESS
+Now package the application:
+mvn clean package
+The generated JAR file will be available inside:
+target/StudentResult-1.0-SNAPSHOT.jar
+To run the application directly using Maven:
+mvn exec:java -Dexec.mainClass="com.example.StudentResult"
+Note: The exec command requires the Maven Exec plugin. Alternatively, run the main() method directly from IntelliJ IDEA.
+Expected output:
+Marks: 75
+Result: Pass
+Step 7: Create Azure Pipeline YAML
+This is the most important DevOps step.
+Inside the main StudentResult folder, execute:
+gedit azure-pipelines.yml
+Paste this complete pipeline configuration:
+trigger:
+- main
+- master
+pool:
+  vmImage: 'ubuntu-latest'
+steps:
+
+- task: Maven@4
+  displayName: 'Build Java Application and Run JUnit Tests'
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean test package'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.17'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish JAR Artifact'
+  inputs:
+    PathtoPublish: 'target'
+    ArtifactName: 'StudentResult'
+    publishLocation: 'Container'
+Save and close.
+Step 8: Upload the project to Azure DevOps
+Open Azure DevOps.
+Sign in.
+Create a new project named StudentResult.
+Open Repos → Files.
+Copy the repository URL.
+Now return to the Ubuntu terminal.
+Inside your StudentResult folder, execute:
+git init
+git add .
+git commit -m "Student result application with JUnit tests"
+git branch -M main
+git remote add origin YOUR_AZURE_REPOSITORY_URL
+git push -u origin main
+Replace YOUR_AZURE_REPOSITORY_URL with your actual Azure DevOps repository URL.
+For example:
+git remote add origin https://dev.azure.com/USERNAME/StudentResult/_git/StudentResult
+If Git asks for credentials, use the authentication method configured for your Azure DevOps account (such as a Personal Access Token).
+Step 9: Configure the Azure Pipeline
+Open your Azure DevOps project.
+Select Pipelines → Pipelines.
+Click New Pipeline.
+Select Azure Repos Git.
+Select your StudentResult repository.
+Select Existing Azure Pipelines YAML file.
+Choose branch main.
+Select /azure-pipelines.yml.
+Click Continue.
+Click Run.
+
+Step 10: Verify pipeline execution
+After clicking Run, Azure DevOps will execute the pipeline.
+You should see:
+Build CI/CD Pipelines for Java Using Azure DevOps
+dzone.com
+Expected results:
+Operation
+Expected status
+Maven clean
+Success
+Java compilation
+Success
+JUnit test execution
+Success
+Maven package
+Success
+Artifact publishing
+Success
+
+Your JUnit test summary should show:
+4 tests passed
+35 → Fail
+50 → Pass
+75 → Pass
+100 → Pass
+Step 11: Download the generated JAR
+After successful execution:
+Open the completed pipeline run.
+Select Summary.
+Find the Related → Published section or Artifacts section.
+Click the StudentResult artifact.
+Download it.
+You have now successfully built the Java application, executed regression tests and published the build artifact through Azure Pipelines.
